@@ -1,168 +1,163 @@
-
 import javafx.application.Application;
-import javafx.stage.Stage;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Ellipse;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 
-public class TicTacToe extends Application {
-  // Indicate which player has a turn, initially it is the X player
-  private char whoseTurn = 'X';
+public class TicTacToeFX extends Application {
+    // 3x3 board to track game state
+    private char[][] board = new char[3][3];
 
-  // Create and initialize cell
-  private Cell[][] cell =  new Cell[3][3];
+    // Tracks current player ('X' or 'O')
+    private char currentPlayer = 'X';
 
-  // Create and initialize a status label
-  private Label lblStatus = new Label("X's turn to play");
+    // 2D array of buttons representing the game grid
+    private Button[][] buttons = new Button[3][3];
 
-  @Override // Override the start method in the Application class
-  public void start(Stage primaryStage) {
-    // Pane to hold cell
-    GridPane pane = new GridPane(); 
-    for (int i = 0; i < 3; i++)
-      for (int j = 0; j < 3; j++)
-        pane.add(cell[i][j] = new Cell(), j, i);
+    // Score counters for each player
+    private int scoreX = 0;
+    private int scoreO = 0;
 
-    BorderPane borderPane = new BorderPane();
-    borderPane.setCenter(pane);
-    borderPane.setBottom(lblStatus);
-    
-    // Create a scene and place it in the stage
-    Scene scene = new Scene(borderPane, 450, 170);
-    primaryStage.setTitle("TicTacToe"); // Set the stage title
-    primaryStage.setScene(scene); // Place the scene in the stage
-    primaryStage.show(); // Display the stage   
-  }
+    // Label to display the score
+    private Label scoreLabel;
 
-  /** Determine if the cell are all occupied */
-  public boolean isFull() {
-    for (int i = 0; i < 3; i++)
-      for (int j = 0; j < 3; j++)
-        if (cell[i][j].getToken() == ' ')
-          return false;
+    @Override
+    public void start(Stage primaryStage) {
+        initializeBoard(); // Fill board with empty spaces
 
-    return true;
-  }
+        // Create a grid layout for the game board
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
 
-  /** Determine if the player with the specified token wins */
-  public boolean isWon(char token) {
-    for (int i = 0; i < 3; i++)
-      if (cell[i][0].getToken() == token
-          && cell[i][1].getToken() == token
-          && cell[i][2].getToken() == token) {
+        // Create 3x3 buttons and add them to the grid
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                Button button = new Button(" "); // Empty button
+                button.setPrefSize(100, 100);    // Set size
+                final int r = row;
+                final int c = col;
+
+                // Set what happens when the button is clicked
+                button.setOnAction(e -> handleMove(r, c, button));
+
+                buttons[row][col] = button;      // Store button in array
+                grid.add(button, col, row);      // Add to grid layout
+            }
+        }
+
+        // Create a reset button to restart the game
+        Button resetButton = new Button("Reset");
+        resetButton.setOnAction(e -> resetGame());
+
+        // Create a label to show the score
+        scoreLabel = new Label("Score - X: 0 | O: 0");
+
+        // Layout for score and reset button
+        HBox controls = new HBox(20, scoreLabel, resetButton);
+        controls.setAlignment(Pos.CENTER);
+
+        // Main layout: grid in center, controls at bottom
+        BorderPane root = new BorderPane();
+        root.setCenter(grid);
+        root.setBottom(controls);
+
+        // Set up the scene and show the window
+        Scene scene = new Scene(root, 320, 370);
+        primaryStage.setTitle("Tic Tac Toe");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    // Handles a player's move when a button is clicked
+    private void handleMove(int row, int col, Button button) {
+        if (board[row][col] != ' ') return; // Ignore if already filled
+
+        board[row][col] = currentPlayer;    // Update board state
+        button.setText(String.valueOf(currentPlayer)); // Show symbol on button
+
+        if (checkWin(currentPlayer)) {
+            showAlert("Player " + currentPlayer + " wins!"); // Show win message
+            updateScore(currentPlayer);                      // Update score
+            disableAllButtons();                             // Lock board
+        } else if (isBoardFull()) {
+            showAlert("It's a draw!"); // Show draw message
+        } else {
+            // Switch to the other player
+            currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+        }
+    }
+
+    // Resets the game board for a new round
+    private void resetGame() {
+        currentPlayer = 'X'; // Start with X again
+        initializeBoard();   // Clear board state
+
+        // Reset all buttons to empty and enable them
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
+                buttons[i][j].setText(" ");
+                buttons[i][j].setDisable(false);
+            }
+    }
+
+    // Updates the score and refreshes the score label
+    private void updateScore(char winner) {
+        if (winner == 'X') scoreX++;
+        else if (winner == 'O') scoreO++;
+        scoreLabel.setText("Score - X: " + scoreX + " | O: " + scoreO);
+    }
+
+    // Initializes the board with empty spaces
+    private void initializeBoard() {
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                board[i][j] = ' ';
+    }
+
+    // Checks if the given player has won
+    private boolean checkWin(char player) {
+        // Check rows and columns
+        for (int i = 0; i < 3; i++) {
+            if (board[i][0] == player && board[i][1] == player && board[i][2] == player) return true;
+            if (board[0][i] == player && board[1][i] == player && board[2][i] == player) return true;
+        }
+        // Check diagonals
+        return (board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+               (board[0][2] == player && board[1][1] == player && board[2][0] == player);
+    }
+
+    // Checks if the board is full (no empty spaces)
+    private boolean isBoardFull() {
+        for (char[] row : board)
+            for (char cell : row)
+                if (cell == ' ') return false;
         return true;
-      }
-
-    for (int j = 0; j < 3; j++)
-      if (cell[0][j].getToken() ==  token
-          && cell[1][j].getToken() == token
-          && cell[2][j].getToken() == token) {
-        return true;
-      }
-
-    if (cell[0][0].getToken() == token 
-        && cell[1][1].getToken() == token        
-        && cell[2][2].getToken() == token) {
-      return true;
     }
 
-    if (cell[0][2].getToken() == token
-        && cell[1][1].getToken() == token
-        && cell[2][0].getToken() == token) {
-      return true;
+    // Disables all buttons after game ends
+    private void disableAllButtons() {
+        for (Button[] row : buttons)
+            for (Button b : row)
+                b.setDisable(true);
     }
 
-    return false;
-  }
-
-  // An inner class for a cell
-  public class Cell extends Pane {
-    // Token used for this cell
-    private char token = ' ';
-
-    public Cell() {
-      setStyle("-fx-border-color: black"); 
-      this.setPrefSize(800, 800);
-      this.setOnMouseClicked(e -> handleMouseClick());
+    // Shows a popup alert with the given message
+    private void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.show();
     }
 
-    /** Return token */
-    public char getToken() {
-      return token;
+    // Launches the JavaFX application
+    public static void main(String[] args) {
+        launch(args);
     }
-
-    /** Set a new token */
-    public void setToken(char c) {
-      token = c;
-      
-      if (token == 'X') {
-        Line line1 = new Line(10, 10, 
-          this.getWidth() - 10, this.getHeight() - 10);
-        line1.endXProperty().bind(this.widthProperty().subtract(10));
-        line1.endYProperty().bind(this.heightProperty().subtract(10));
-        Line line2 = new Line(10, this.getHeight() - 10, 
-          this.getWidth() - 10, 10);
-        line2.startYProperty().bind(
-          this.heightProperty().subtract(10));
-        line2.endXProperty().bind(this.widthProperty().subtract(10));
-        
-        // Add the lines to the pane
-        this.getChildren().addAll(line1, line2); 
-      }
-      else if (token == 'O') {
-        Ellipse ellipse = new Ellipse(this.getWidth() / 2, 
-          this.getHeight() / 2, this.getWidth() / 2 - 10, 
-          this.getHeight() / 2 - 10);
-        ellipse.centerXProperty().bind(
-          this.widthProperty().divide(2));
-        ellipse.centerYProperty().bind(
-            this.heightProperty().divide(2));
-        ellipse.radiusXProperty().bind(
-            this.widthProperty().divide(2).subtract(10));        
-        ellipse.radiusYProperty().bind(
-            this.heightProperty().divide(2).subtract(10));   
-        ellipse.setStroke(Color.BLACK);
-        ellipse.setFill(Color.WHITE);
-        
-        getChildren().add(ellipse); // Add the ellipse to the pane
-      }
-    }
-
-    /* Handle a mouse click event */
-    private void handleMouseClick() {
-      // If cell is empty and game is not over
-      if (token == ' ' && whoseTurn != ' ') {
-        setToken(whoseTurn); // Set token in the cell
-
-        // Check game status
-        if (isWon(whoseTurn)) {
-          lblStatus.setText(whoseTurn + " won! The game is over");
-          whoseTurn = ' '; // Game is over
-        }
-        else if (isFull()) {
-          lblStatus.setText("Draw! The game is over");
-          whoseTurn = ' '; // Game is over
-        }
-        else {
-          // Change the turn
-          whoseTurn = (whoseTurn == 'X') ? 'O' : 'X';
-          // Display whose turn
-          lblStatus.setText(whoseTurn + "'s turn");
-        }
-      }
-    }
-  }
-  
-  /**
-   * The main method is only needed for the IDE with limited
-   * JavaFX support. Not needed for running from the command line.
-   */
-  public static void main(String[] args) {
-    launch(args);
-  }
 }
+
