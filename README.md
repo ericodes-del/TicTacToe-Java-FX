@@ -1,167 +1,168 @@
-  1  import javafx.application.Application;
-  2  import javafx.stage.Stage;
-  3  import javafx.scene.Scene;
-  4  import javafx.scene.control.Label;
-  5  import javafx.scene.layout.BorderPane;
-  6  import javafx.scene.layout.GridPane;
-  7  import javafx.scene.layout.Pane;
-  8  import javafx.scene.paint.Color;
-  9  import javafx.scene.shape.Line;
- 10  import javafx.scene.shape.Ellipse;
- 11  
- 12  public class TicTacToe extends Application {
- 13    // Indicate which player has a turn, initially it is the X player
- 14    private char whoseTurn = 'X';
- 15  
- 16    // Create and initialize cell
- 17    private Cell[][] cell =  new Cell[3][3];
- 18  
- 19    // Create and initialize a status label
- 20    private Label lblStatus = new Label("X's turn to play");
- 21  
- 22    @Override // Override the start method in the Application class
- 23    public void start(Stage primaryStage) {
- 24      // Pane to hold cell
- 25      GridPane pane = new GridPane(); 
- 26      for (int i = 0; i < 3; i++)
- 27        for (int j = 0; j < 3; j++)
- 28          pane.add(cell[i][j] = new Cell(), j, i);
- 29  
- 30      BorderPane borderPane = new BorderPane();
- 31      borderPane.setCenter(pane);
- 32      borderPane.setBottom(lblStatus);
- 33      
- 34      // Create a scene and place it in the stage
- 35      Scene scene = new Scene(borderPane, 450, 170);
- 36      primaryStage.setTitle("TicTacToe"); // Set the stage title
- 37      primaryStage.setScene(scene); // Place the scene in the stage
- 38      primaryStage.show(); // Display the stage   
- 39    }
- 40  
- 41    /** Determine if the cell are all occupied */
- 42    public boolean isFull() {
- 43      for (int i = 0; i < 3; i++)
- 44        for (int j = 0; j < 3; j++)
- 45          if (cell[i][j].getToken() == ' ')
- 46            return false;
- 47  
- 48      return true;
- 49    }
- 50  
- 51    /** Determine if the player with the specified token wins */
- 52    public boolean isWon(char token) {
- 53      for (int i = 0; i < 3; i++)
- 54        if (cell[i][0].getToken() == token
- 55            && cell[i][1].getToken() == token
- 56            && cell[i][2].getToken() == token) {
- 57          return true;
- 58        }
- 59  
- 60      for (int j = 0; j < 3; j++)
- 61        if (cell[0][j].getToken() ==  token
- 62            && cell[1][j].getToken() == token
- 63            && cell[2][j].getToken() == token) {
- 64          return true;
- 65        }
- 66  
- 67      if (cell[0][0].getToken() == token 
- 68          && cell[1][1].getToken() == token        
- 69          && cell[2][2].getToken() == token) {
- 70        return true;
- 71      }
- 72  
- 73      if (cell[0][2].getToken() == token
- 74          && cell[1][1].getToken() == token
- 75          && cell[2][0].getToken() == token) {
- 76        return true;
- 77      }
- 78  
- 79      return false;
- 80    }
- 81  
- 82    // An inner class for a cell
- 83    public class Cell extends Pane {
- 84      // Token used for this cell
- 85      private char token = ' ';
- 86  
- 87      public Cell() {
- 88        setStyle("-fx-border-color: black"); 
- 89        this.setPrefSize(800, 800);
- 90        this.setOnMouseClicked(e -> handleMouseClick());
- 91      }
- 92  
- 93      /** Return token */
- 94      public char getToken() {
- 95        return token;
- 96      }
- 97  
- 98      /** Set a new token */
- 99      public void setToken(char c) {
-100        token = c;
-101        
-102        if (token == 'X') {
-103          Line line1 = new Line(10, 10, 
-104            this.getWidth() - 10, this.getHeight() - 10);
-105          line1.endXProperty().bind(this.widthProperty().subtract(10));
-106          line1.endYProperty().bind(this.heightProperty().subtract(10));
-107          Line line2 = new Line(10, this.getHeight() - 10, 
-108            this.getWidth() - 10, 10);
-109          line2.startYProperty().bind(
-110            this.heightProperty().subtract(10));
-111          line2.endXProperty().bind(this.widthProperty().subtract(10));
-112          
-113          // Add the lines to the pane
-114          this.getChildren().addAll(line1, line2); 
-115        }
-116        else if (token == 'O') {
-117          Ellipse ellipse = new Ellipse(this.getWidth() / 2, 
-118            this.getHeight() / 2, this.getWidth() / 2 - 10, 
-119            this.getHeight() / 2 - 10);
-120          ellipse.centerXProperty().bind(
-121            this.widthProperty().divide(2));
-122          ellipse.centerYProperty().bind(
-123              this.heightProperty().divide(2));
-124          ellipse.radiusXProperty().bind(
-125              this.widthProperty().divide(2).subtract(10));        
-126          ellipse.radiusYProperty().bind(
-127              this.heightProperty().divide(2).subtract(10));   
-128          ellipse.setStroke(Color.BLACK);
-129          ellipse.setFill(Color.WHITE);
-130          
-131          getChildren().add(ellipse); // Add the ellipse to the pane
-132        }
-133      }
-134  
-135      /* Handle a mouse click event */
-136      private void handleMouseClick() {
-137        // If cell is empty and game is not over
-138        if (token == ' ' && whoseTurn != ' ') {
-139          setToken(whoseTurn); // Set token in the cell
-140  
-141          // Check game status
-142          if (isWon(whoseTurn)) {
-143            lblStatus.setText(whoseTurn + " won! The game is over");
-144            whoseTurn = ' '; // Game is over
-145          }
-146          else if (isFull()) {
-147            lblStatus.setText("Draw! The game is over");
-148            whoseTurn = ' '; // Game is over
-149          }
-150          else {
-151            // Change the turn
-152            whoseTurn = (whoseTurn == 'X') ? 'O' : 'X';
-153            // Display whose turn
-154            lblStatus.setText(whoseTurn + "'s turn");
-155          }
-156        }
-157      }
-158    }
-159    
-160    /**
-161     * The main method is only needed for the IDE with limited
-162     * JavaFX support. Not needed for running from the command line.
-163     */
-164    public static void main(String[] args) {
-165      launch(args);
-166    }
-167  }
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Ellipse;
+
+public class TicTacToe extends Application {
+  // Indicate which player has a turn, initially it is the X player
+  private char whoseTurn = 'X';
+
+  // Create and initialize cell
+  private Cell[][] cell =  new Cell[3][3];
+
+  // Create and initialize a status label
+  private Label lblStatus = new Label("X's turn to play");
+
+  @Override // Override the start method in the Application class
+  public void start(Stage primaryStage) {
+    // Pane to hold cell
+    GridPane pane = new GridPane(); 
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        pane.add(cell[i][j] = new Cell(), j, i);
+
+    BorderPane borderPane = new BorderPane();
+    borderPane.setCenter(pane);
+    borderPane.setBottom(lblStatus);
+    
+    // Create a scene and place it in the stage
+    Scene scene = new Scene(borderPane, 450, 170);
+    primaryStage.setTitle("TicTacToe"); // Set the stage title
+    primaryStage.setScene(scene); // Place the scene in the stage
+    primaryStage.show(); // Display the stage   
+  }
+
+  /** Determine if the cell are all occupied */
+  public boolean isFull() {
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        if (cell[i][j].getToken() == ' ')
+          return false;
+
+    return true;
+  }
+
+  /** Determine if the player with the specified token wins */
+  public boolean isWon(char token) {
+    for (int i = 0; i < 3; i++)
+      if (cell[i][0].getToken() == token
+          && cell[i][1].getToken() == token
+          && cell[i][2].getToken() == token) {
+        return true;
+      }
+
+    for (int j = 0; j < 3; j++)
+      if (cell[0][j].getToken() ==  token
+          && cell[1][j].getToken() == token
+          && cell[2][j].getToken() == token) {
+        return true;
+      }
+
+    if (cell[0][0].getToken() == token 
+        && cell[1][1].getToken() == token        
+        && cell[2][2].getToken() == token) {
+      return true;
+    }
+
+    if (cell[0][2].getToken() == token
+        && cell[1][1].getToken() == token
+        && cell[2][0].getToken() == token) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // An inner class for a cell
+  public class Cell extends Pane {
+    // Token used for this cell
+    private char token = ' ';
+
+    public Cell() {
+      setStyle("-fx-border-color: black"); 
+      this.setPrefSize(800, 800);
+      this.setOnMouseClicked(e -> handleMouseClick());
+    }
+
+    /** Return token */
+    public char getToken() {
+      return token;
+    }
+
+    /** Set a new token */
+    public void setToken(char c) {
+      token = c;
+      
+      if (token == 'X') {
+        Line line1 = new Line(10, 10, 
+          this.getWidth() - 10, this.getHeight() - 10);
+        line1.endXProperty().bind(this.widthProperty().subtract(10));
+        line1.endYProperty().bind(this.heightProperty().subtract(10));
+        Line line2 = new Line(10, this.getHeight() - 10, 
+          this.getWidth() - 10, 10);
+        line2.startYProperty().bind(
+          this.heightProperty().subtract(10));
+        line2.endXProperty().bind(this.widthProperty().subtract(10));
+        
+        // Add the lines to the pane
+        this.getChildren().addAll(line1, line2); 
+      }
+      else if (token == 'O') {
+        Ellipse ellipse = new Ellipse(this.getWidth() / 2, 
+          this.getHeight() / 2, this.getWidth() / 2 - 10, 
+          this.getHeight() / 2 - 10);
+        ellipse.centerXProperty().bind(
+          this.widthProperty().divide(2));
+        ellipse.centerYProperty().bind(
+            this.heightProperty().divide(2));
+        ellipse.radiusXProperty().bind(
+            this.widthProperty().divide(2).subtract(10));        
+        ellipse.radiusYProperty().bind(
+            this.heightProperty().divide(2).subtract(10));   
+        ellipse.setStroke(Color.BLACK);
+        ellipse.setFill(Color.WHITE);
+        
+        getChildren().add(ellipse); // Add the ellipse to the pane
+      }
+    }
+
+    /* Handle a mouse click event */
+    private void handleMouseClick() {
+      // If cell is empty and game is not over
+      if (token == ' ' && whoseTurn != ' ') {
+        setToken(whoseTurn); // Set token in the cell
+
+        // Check game status
+        if (isWon(whoseTurn)) {
+          lblStatus.setText(whoseTurn + " won! The game is over");
+          whoseTurn = ' '; // Game is over
+        }
+        else if (isFull()) {
+          lblStatus.setText("Draw! The game is over");
+          whoseTurn = ' '; // Game is over
+        }
+        else {
+          // Change the turn
+          whoseTurn = (whoseTurn == 'X') ? 'O' : 'X';
+          // Display whose turn
+          lblStatus.setText(whoseTurn + "'s turn");
+        }
+      }
+    }
+  }
+  
+  /**
+   * The main method is only needed for the IDE with limited
+   * JavaFX support. Not needed for running from the command line.
+   */
+  public static void main(String[] args) {
+    launch(args);
+  }
+}
